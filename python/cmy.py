@@ -5,7 +5,7 @@ import time
 import numpy as np
 import cupy as cp
 
-
+THREADS = 16
 
 def rgb_to_cmy(rgb:tuple[int,int,int]) -> tuple[int,int,int]:
     out = np.array([
@@ -48,7 +48,7 @@ def cpu_parallel(write_file):
 
     height, width, _ = im_np.shape
 
-    num_workers = multiprocessing.cpu_count()
+    num_workers = THREADS
     chunks = np.array_split(im_np, num_workers, axis=0)
 
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -75,7 +75,7 @@ def gpu_parallel_wrong(write_file):
     im: Image = Image.open('dogo.jpg')
     im_np = np.array(im)
 
-    num_workers = multiprocessing.cpu_count()
+    num_workers = THREADS
     chunks = np.array_split(im_np, num_workers, axis=0)
 
     with ProcessPoolExecutor(max_workers=num_workers) as executor:
@@ -87,9 +87,20 @@ def gpu_parallel_wrong(write_file):
     if (write_file):
         im_out.save('dogo_out.jpg')
 
+def gpu_parallel_right(write_file):
+    im: Image = Image.open('dogo.jpg')
+    im_np = np.array(im)
+
+    im_gpu = cp.asarray(im_np)
+    im_gpu_out = 255 - im_gpu
+    im_np_out = cp.asnumpy(im_gpu_out)
+
+    im_out = Image.fromarray(im_np_out)
+    if (write_file):
+        im_out.save('dogo_out.jpg')
+
 
 def main():
-
     write_file = False
 
     start = time.perf_counter()
@@ -103,6 +114,10 @@ def main():
     start = time.perf_counter()
     gpu_parallel_wrong(write_file)
     print(f"GPU parallel (wrong): {time.perf_counter() - start:.4f}s")
+
+    start = time.perf_counter()
+    gpu_parallel_right(write_file)
+    print(f"GPU parallel (right): {time.perf_counter() - start:.4f}s")
 
 
 if __name__ == "__main__":
