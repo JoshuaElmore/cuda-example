@@ -60,7 +60,32 @@ def cpu_parallel(write_file):
     if (write_file):
         im_out.save('dogo_out.jpg')
 
+def _process_rows_gpu_wrong(rows: np.ndarray) -> np.ndarray:
+    rows_gpu = cp.asarray(rows)
+    rows_cpu = cp.asnumpy(rows_gpu)
+
+    out = np.zeros(rows_cpu.shape[:2] + (3,), dtype=np.uint8)
+    for i in range(rows_cpu.shape[0]):
+        for j in range(rows_cpu.shape[1]):
+            out[i][j] = rgb_to_cmy(rows_cpu[i][j])
+    return out
+
+
 def gpu_parallel_wrong(write_file):
+    im: Image = Image.open('dogo.jpg')
+    im_np = np.array(im)
+
+    num_workers = multiprocessing.cpu_count()
+    chunks = np.array_split(im_np, num_workers, axis=0)
+
+    with ProcessPoolExecutor(max_workers=num_workers) as executor:
+        results = list(executor.map(_process_rows_gpu_wrong, chunks))
+
+    im_np_out = np.concatenate(results, axis=0)
+
+    im_out = Image.fromarray(im_np_out)
+    if (write_file):
+        im_out.save('dogo_out.jpg')
 
 
 def main():
@@ -74,6 +99,10 @@ def main():
     start = time.perf_counter()
     cpu_parallel(write_file)
     print(f"CPU parallel: {time.perf_counter() - start:.4f}s")
+
+    start = time.perf_counter()
+    gpu_parallel_wrong(write_file)
+    print(f"GPU parallel (wrong): {time.perf_counter() - start:.4f}s")
 
 
 if __name__ == "__main__":
