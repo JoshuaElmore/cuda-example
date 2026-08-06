@@ -1,0 +1,3 @@
+Pillow
+numpy
+cupy-cuda13x[ctk]
