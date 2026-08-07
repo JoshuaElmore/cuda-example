@@ -6,7 +6,7 @@ import cupy as cp
 
 THREADS = 16
 
-WRITE_FILE = False
+WRITE_FILE = True
 FILE = 'big.jpg'
 OUT_FILE = 'big_out.jpg'
 
