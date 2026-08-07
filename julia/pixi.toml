@@ -1,0 +1,12 @@
+[workspace]
+channels = ["conda-forge"]
+name = "julia"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+instantiate = "julia --project=. -e 'using Pkg; Pkg.instantiate()'"
+run = { cmd = "julia --project=. -t auto cmy.jl", depends-on = ["instantiate"] }
+
+[dependencies]
+julia = ">=1.10"

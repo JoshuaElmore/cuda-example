@@ -1,0 +1,14 @@
+[workspace]
+channels = ["nvidia", "conda-forge"]
+name = "c++"
+platforms = ["linux-64"]
+version = "0.1.0"
+
+[tasks]
+build = "nvcc -O3 -std=c++17 -arch=native -diag-suppress=550 -ccbin $CXX cmy_right.cu -o cmy_right"
+run = { cmd = "./cmy_right", depends-on = ["build"] }
+
+[dependencies]
+cuda-nvcc = "*"
+cuda-cudart-dev = "*"
+gxx = "12.*"
