@@ -1,6 +1,12 @@
 using Images
 using FileIO
+using Logging
+
+# CUDA.jl warns at load time that this is a non-official (conda-forge) Julia
+# build; that's expected under pixi, so mute warnings just for the load.
+Logging.disable_logging(Logging.Warn)
 using CUDA
+Logging.disable_logging(Logging.BelowMinLevel)
 
 const THREADS = 16
 

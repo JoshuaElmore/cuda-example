@@ -5,7 +5,7 @@ platforms = ["linux-64"]
 version = "0.1.0"
 
 [tasks]
-instantiate = "julia --project=. -e 'using Pkg; Pkg.instantiate()'"
+instantiate = '''julia --project=. -e "using Pkg; Pkg.instantiate()" 2>&1 | awk '/had output during precompilation:/ {hdr=$0; held=1; next} /^┌/ {blk=$0; inblk=1; drop=/non-official build/; next} inblk {blk=blk"\n"$0; if (/non-official build/) drop=1; if (/^└/) {if (!drop) {if (held) {print hdr; held=0} print blk} inblk=0} next} {if (held) {print hdr; held=0} print}' '''
 run = { cmd = "julia --project=. -t auto cmy.jl", depends-on = ["instantiate"] }
 
 [dependencies]
