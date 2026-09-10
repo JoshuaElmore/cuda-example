@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Needs a visible GPU. On a cluster:
-#     srun --gres=gpu:a40:1 --cpus-per-task=16 --pty ./run_all.sh
+# srun --gres=gpu:a40:1 --cpus-per-task=16 --partition=gpupriority --account=priority-rci --pty ./run_all.sh
 
 set -uo pipefail
 cd "$(dirname "$0")"
