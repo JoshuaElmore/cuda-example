@@ -123,6 +123,19 @@ def gpu_parallel(src: np.ndarray) -> tuple[np.ndarray, dict[str, float]]:
     return out, {"h2d": h2d, "sweeps": sweeps, "d2h": d2h}
 
 
+def gpu_parallel_simple(src: np.ndarray) -> np.ndarray:
+    a = cp.asarray(src)                       # host -> device, paid once
+    b = a.copy()
+    scratch = cp.empty_like(a[1:-1, 1:-1])
+    for _ in range(ITERATIONS):
+        _sweep(a, b, 1, src.shape[0] - 1, scratch)
+        peak = float(b[1:-1, 1:-1].max())
+        print(f"Peak value after sweep: {peak}")
+        print(f"Whole array: {b}")
+        a, b = b, a                           # last write becomes next input
+    return cp.asnumpy(a)                      # device -> host, paid once
+
+
 def warmup_gpu() -> None:
     """Pay CUDA context init and kernel compilation before anything is timed.
 
