@@ -146,6 +146,20 @@ def describe_gpu() -> None:
           f"cupy {cp.__version__}, CUDA {cp.cuda.runtime.runtimeGetVersion()}")
 
 
+def print_bars(rows: list[tuple[str, float, str]], width: int = 40) -> None:
+    """Bar chart of timings, scaled so the longest bar fills `width`.
+
+    Each row is (label, seconds, note). Drawn on one shared scale so the GPU's
+    phases are directly comparable against the CPU total -- the point being that
+    the transfers, not the sweeps, are what the GPU spends its time on.
+    """
+    scale = max(secs for _, secs, _ in rows) or 1.0
+    label_w = max(len(label) for label, _, _ in rows)
+    for label, secs, note in rows:
+        bar = "\u2588" * max(1, round(secs / scale * width))
+        print(f"{label:<{label_w}}  {secs:7.4f}s  {bar:<{width}}  {note}".rstrip())
+
+
 def main() -> None:
     src = load_image()
     height, width, channels = src.shape
@@ -157,16 +171,23 @@ def main() -> None:
     warmup_gpu()
 
     cpu_out, cpu_t = cpu_parallel(src)
-    print(f"CPU parallel: {cpu_t['sweeps']:.4f}s "
-          f"({cpu_t['sweeps'] / ITERATIONS * 1e3:.1f} ms/sweep)")
-
     gpu_out, gpu_t = gpu_parallel(src)
-    total = gpu_t["h2d"] + gpu_t["sweeps"] + gpu_t["d2h"]
-    print(f"GPU parallel: {total:.4f}s "
-          f"(h2d {gpu_t['h2d']:.4f}s, sweeps {gpu_t['sweeps']:.4f}s "
-          f"= {gpu_t['sweeps'] / ITERATIONS * 1e3:.1f} ms/sweep, "
-          f"d2h {gpu_t['d2h']:.4f}s)")
+    gpu_total = gpu_t["h2d"] + gpu_t["sweeps"] + gpu_t["d2h"]
 
+    def per_sweep(secs: float) -> str:
+        return f"{secs / ITERATIONS * 1e3:.1f} ms/sweep"
+
+    print()
+    print_bars([
+        ("CPU parallel", cpu_t["sweeps"], per_sweep(cpu_t["sweeps"])),
+        ("GPU parallel", gpu_total, ""),
+        ("  h2d", gpu_t["h2d"], "PCIe host->device"),
+        ("  sweeps", gpu_t["sweeps"], per_sweep(gpu_t["sweeps"])),
+        ("  d2h", gpu_t["d2h"], "PCIe device->host"),
+    ])
+    transfer = gpu_t["h2d"] + gpu_t["d2h"]
+    print(f"\ntransfers are {transfer / gpu_total * 100:.0f}% of GPU wall time; "
+          f"per sweep the GPU is {cpu_t['sweeps'] / gpu_t['sweeps']:.1f}x the CPU")
     print(f"max |CPU - GPU|: {np.abs(cpu_out - gpu_out).max():.3e}")
 
 
