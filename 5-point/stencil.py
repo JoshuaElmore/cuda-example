@@ -40,8 +40,8 @@ from PIL import Image
 import numpy as np
 import cupy as cp
 
-THREADS = 16
-ITERATIONS = 10
+THREADS = 8
+ITERATIONS = 100
 
 WRITE_FILE = False
 ROOT = Path(__file__).resolve().parent.parent
